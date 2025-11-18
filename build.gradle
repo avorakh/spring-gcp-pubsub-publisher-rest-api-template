@@ -9,7 +9,7 @@ plugins {
 
 group = 'dev.avorakh.gcp'
 version = '0.0.1-SNAPSHOT'
-description = 'Spring REST API Template for GCP.'
+description = 'Spring REST API PubSub Publisher Template for GCP.'
 
 java {
     toolchain {
