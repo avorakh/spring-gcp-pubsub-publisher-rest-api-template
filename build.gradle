@@ -29,6 +29,7 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.google.cloud:spring-cloud-gcp-starter'
+    implementation 'com.google.cloud:spring-cloud-gcp-starter-pubsub'
 
     developmentOnly libs.spring.boot.devtools
 
