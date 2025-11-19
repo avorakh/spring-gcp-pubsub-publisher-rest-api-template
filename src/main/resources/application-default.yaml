@@ -1,0 +1,11 @@
+app:
+  pubsub:
+    topic: sample-events
+
+# Logging Configuration for Default Profile
+logging:
+  level:
+    root: INFO
+    com.google.cloud.pubsub: INFO
+    org.springframework.cloud.gcp.pubsub: INFO
+    org.springframework.integration: INFO

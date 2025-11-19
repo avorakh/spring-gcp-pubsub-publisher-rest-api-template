@@ -143,6 +143,16 @@ gcloud auth list
 ---
 
 
+## How to run the application with Google Cloud Pub/Sub simulator
+### Setup
+TBA
+
+### How to run the application
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
 ## Publish Event API
 
 ```bash
