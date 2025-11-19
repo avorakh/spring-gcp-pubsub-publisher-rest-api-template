@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
-class SpringRestApiTemplateApplicationTests {
+class SpringPubSubPuslisherRestApiTemplateApplicationTests {
 
     @Autowired
     private CredentialsProvider googleCredentials;
