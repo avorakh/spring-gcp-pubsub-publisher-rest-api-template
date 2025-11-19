@@ -6,3 +6,15 @@ server:
   port: 8090
   servlet:
     context-path: /template
+
+app:
+  pubsub:
+    topic: sample-events
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.google.cloud.pubsub: INFO
+    org.springframework.cloud.gcp.pubsub: INFO
+    org.springframework.integration: INFO
