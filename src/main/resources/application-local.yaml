@@ -1,4 +1,5 @@
 spring:
+  # Cloud GPC Configuration
   cloud:
     gcp:
       project-id: sample-project
@@ -7,6 +8,22 @@ spring:
         enabled: true
       credentials:
         enabled: false
+  # Database Configuration - postgresql
+  datasource:
+    url: jdbc:postgresql://localhost:5432/north
+    username: ${DB_USERNAME:usr_north}
+    password: ${DB_PASSWORD:Pass1234}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+#  GPC PubSub Configuration
 app:
   pubsub:
     topic: sample-topic

@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.spring.pubsub.core.publisher.PubSubPublisherTemplate;
 import com.google.pubsub.v1.PubsubMessage;
+
 import dev.avorakh.gcp.template.model.RequestEventDto;
 import dev.avorakh.gcp.template.model.PublishedEventDto;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,9 @@ public class EventPublisherImpl implements EventPublisher {
 
     PubSubPublisherTemplate pubSubPublisherTemplate;
     ObjectMapper objectMapper;
+    PublishedEventPostProcessor publishedEventPostProcessor;
     @NonFinal
+    @Setter
     @Value("${app.pubsub.topic}")
     String topic;
 
@@ -37,7 +42,8 @@ public class EventPublisherImpl implements EventPublisher {
         PubsubMessage message = toPubsubMessage(event);
 
         return pubSubPublisherTemplate.publish(topic, message)
-                .handle((messageId, throwable) -> handleMessage(messageId, throwable, message));
+                .handle((messageId, throwable) -> handleMessage(messageId, throwable, message))
+                .thenApply(response -> publishedEventPostProcessor.process(event, response));
     }
 
     private PublishedEventDto handleMessage(String messageId, Throwable throwable, PubsubMessage message) {
