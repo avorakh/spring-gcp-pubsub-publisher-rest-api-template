@@ -1,4 +1,6 @@
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
+import groovy.xml.XmlParser
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     id 'java'
@@ -37,7 +39,7 @@ dependencies {
 
     developmentOnly libs.spring.boot.devtools
 
-    testImplementation platform( libs.testcontainers.bom)
+    testImplementation platform(libs.testcontainers.bom)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation libs.bundles.testcontainers
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -51,6 +53,7 @@ test {
     useJUnitPlatform()
     testLogging {
         events "passed", "skipped", "failed"
+        exceptionFormat = TestExceptionFormat.FULL
     }
     finalizedBy jacocoTestReport
 }
@@ -62,12 +65,19 @@ jacoco {
 
 
 jacocoTestReport {
+    dependsOn test
+
     executionData(test)
     reports {
         xml.required = true
         html.required = true
+        csv.required = true
     }
-    dependsOn test
+
+    doLast {
+        def report = file("${getLayout().getBuildDirectory().get()}/reports/jacoco/test/jacocoTestReport.xml")
+        printCoverage(report)
+    }
 }
 
 
@@ -84,3 +94,74 @@ jacocoTestCoverageVerification {
 
 check.dependsOn jacocoTestCoverageVerification
 
+// Methods for print coverage
+def printCoverage(File xml) {
+    if (!xml.exists()) {
+        logger.quiet("Unable to load the code coverage file:" + xml.path)
+        return
+    }
+
+    def parser = new XmlParser()
+    parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+    def results = parser.parse(xml)
+
+    def percentage = {
+        if (it != null) {
+            def covered = it.'@covered' as Double
+            def missed = it.'@missed' as Double
+            ((covered / (covered + missed)) * 100).round(2)
+        } else {
+            0 as Double
+        }
+    }
+
+    printTotalCodeCoverage(results, percentage)
+
+    printClassCodeCoverage(results, percentage)
+}
+
+def printTotalCodeCoverage(Node results, Closure<Double> percentage) {
+    def counters = results.counter
+    def metrics = [
+            'instruction': percentage(counters.find { it.'@type'.equals('INSTRUCTION') }),
+            'branch'     : percentage(counters.find { it.'@type'.equals('BRANCH') }),
+            'line'       : percentage(counters.find { it.'@type'.equals('LINE') }),
+            'complexity' : percentage(counters.find { it.'@type'.equals('COMPLEXITY') }),
+            'method'     : percentage(counters.find { it.'@type'.equals('METHOD') }),
+            'class'      : percentage(counters.find { it.'@type'.equals('CLASS') })
+    ]
+
+    logger.quiet("----- Total Code Coverage ----------")
+    metrics.each { key, value -> logger.quiet(sprintf(" - %-11s: %6.2f%%", key, value)) }
+    logger.quiet("------------------------------------")
+}
+
+def printClassCodeCoverage(Node results, percentage) {
+    def classLineLength = 111
+    def ccStr = 'Code Coverage Per Class'
+    logger.quiet(ccStr.center(classLineLength, '-'))
+    logger.quiet(String.format("- %-80s : %-14s : %-9s", "Element", 'INSTRUCTION', 'BRANCH'))
+    logger.quiet('-' * classLineLength)
+    results.package.class.each { clazz ->
+        def instructionCounter = clazz.counter.find { it.'@type'.equals('INSTRUCTION') }
+        def className = clazz.@name.toString().replace('/', '.')
+
+        if (instructionCounter == null) {
+            logger.quiet(String.format("- %-80s : %-14s  : %-9s", className, 'N/A', 'N/A'))
+            return
+        }
+
+        def covered = instructionCounter.'@covered' as Integer
+        def missed = instructionCounter.'@missed' as Integer
+        if (covered + missed == 0) {
+            logger.quiet(String.format("- %-80s : %-14.2f%% : %-7.2f%%", className, 0, 0))
+            return
+        }
+
+        def coverage = percentage(instructionCounter)
+        def coverageClass = percentage(clazz.counter.find { it.'@type'.equals('BRANCH') })
+        logger.quiet(String.format("- %-80s : %-14.2f%% : %-7.2f%%", className, coverage, coverageClass))
+    }
+    logger.quiet('-' * classLineLength)
+}
