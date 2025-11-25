@@ -144,8 +144,22 @@ def printClassCodeCoverage(Node results, percentage) {
     logger.quiet(String.format("- %-80s : %-14s : %-9s", "Element", 'INSTRUCTION', 'BRANCH'))
     logger.quiet('-' * classLineLength)
     results.package.class.each { clazz ->
+        def instructionCounter = clazz.counter.find { it.'@type'.equals('INSTRUCTION') }
         def className = clazz.@name.toString().replace('/', '.')
-        def coverage = percentage(clazz.counter.find { it.'@type'.equals('INSTRUCTION') })
+
+        if (instructionCounter == null) {
+            logger.quiet(String.format("- %-80s : %-14s  : %-9s", className, 'N/A', 'N/A'))
+            return
+        }
+
+        def covered = instructionCounter.'@covered' as Integer
+        def missed = instructionCounter.'@missed' as Integer
+        if (covered + missed == 0) {
+            logger.quiet(String.format("- %-80s : %-14.2f%% : %-7.2f%%", className, 0, 0))
+            return
+        }
+
+        def coverage = percentage(instructionCounter)
         def coverageClass = percentage(clazz.counter.find { it.'@type'.equals('BRANCH') })
         logger.quiet(String.format("- %-80s : %-14.2f%% : %-7.2f%%", className, coverage, coverageClass))
     }
